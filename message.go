@@ -10,6 +10,7 @@
 package discordgo
 
 import (
+	"encoding/json"
 	"io"
 	"regexp"
 	"strconv"
