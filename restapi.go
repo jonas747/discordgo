@@ -1717,8 +1717,13 @@ func (s *Session) ChannelMessageEdit(channelID, messageID int64, content string)
 // ChannelMessageEditComplex edits an existing message, replacing it entirely with
 // the given MessageEdit struct
 func (s *Session) ChannelMessageEditComplex(m *MessageEdit) (st *Message, err error) {
-	if m.Embed != nil && m.Embed.Type == "" {
-		m.Embed.Type = "rich"
+	if m.EmbedEdit != nil {
+		if m.EmbedEdit.Embed != nil && m.EmbedEdit.Embed.Type == "" {
+			m.EmbedEdit.Embed.Type = "rich"
+		}
+		if m.EmbedEdit.Embed == nil && !m.EmbedEdit.Setnil { //dont reset embed unless Setnil is true
+			m.EmbedEdit = nil
+		} 
 	}
 
 	response, err := s.RequestWithBucketID("PATCH", EndpointChannelMessage(m.Channel, m.ID), m, EndpointChannelMessage(m.Channel, 0))
