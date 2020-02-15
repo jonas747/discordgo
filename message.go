@@ -241,6 +241,10 @@ func (e *MessageEmbed) MarshalNil(flag bool) *MessageEmbed {
 
 }
 
+func (e *MessageEmbed) GetMarshalNil() bool {
+	return e.marshalnil
+}
+
 func (e *MessageEmbed) MarshalJSON() ([]byte, error) {
 	if e.marshalnil == true {
 		return json.Marshal(nil)
