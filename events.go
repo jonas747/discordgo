@@ -61,14 +61,6 @@ func (evt *Event) NKeys() int {
 	return 0
 }
 
-type GuildEvent interface {
-	GetGuildID() int64
-}
-
-type ChannelEvent interface {
-	GetChannelID() int64
-}
-
 // A Ready stores all data for the websocket READY event.
 type Ready struct {
 	Version         int          `json:"v"`

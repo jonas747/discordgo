@@ -9,7 +9,6 @@ package discordgo
 const (
 	channelCreateEventType            = "CHANNEL_CREATE"
 	channelDeleteEventType            = "CHANNEL_DELETE"
-	channelEventEventType             = "CHANNEL_EVENT"
 	channelPinsUpdateEventType        = "CHANNEL_PINS_UPDATE"
 	channelUpdateEventType            = "CHANNEL_UPDATE"
 	connectEventType                  = "__CONNECT__"
@@ -20,7 +19,6 @@ const (
 	guildCreateEventType              = "GUILD_CREATE"
 	guildDeleteEventType              = "GUILD_DELETE"
 	guildEmojisUpdateEventType        = "GUILD_EMOJIS_UPDATE"
-	guildEventEventType               = "GUILD_EVENT"
 	guildIntegrationsUpdateEventType  = "GUILD_INTEGRATIONS_UPDATE"
 	guildMemberAddEventType           = "GUILD_MEMBER_ADD"
 	guildMemberRemoveEventType        = "GUILD_MEMBER_REMOVE"
@@ -93,26 +91,6 @@ func (eh channelDeleteEventHandler) New() interface{} {
 // Handle is the handler for ChannelDelete events.
 func (eh channelDeleteEventHandler) Handle(s *Session, i interface{}) {
 	if t, ok := i.(*ChannelDelete); ok {
-		eh(s, t)
-	}
-}
-
-// channelEventEventHandler is an event handler for ChannelEvent events.
-type channelEventEventHandler func(*Session, *ChannelEvent)
-
-// Type returns the event type for ChannelEvent events.
-func (eh channelEventEventHandler) Type() string {
-	return channelEventEventType
-}
-
-// New returns a new instance of ChannelEvent.
-func (eh channelEventEventHandler) New() interface{} {
-	return &ChannelEvent{}
-}
-
-// Handle is the handler for ChannelEvent events.
-func (eh channelEventEventHandler) Handle(s *Session, i interface{}) {
-	if t, ok := i.(*ChannelEvent); ok {
 		eh(s, t)
 	}
 }
@@ -298,26 +276,6 @@ func (eh guildEmojisUpdateEventHandler) New() interface{} {
 // Handle is the handler for GuildEmojisUpdate events.
 func (eh guildEmojisUpdateEventHandler) Handle(s *Session, i interface{}) {
 	if t, ok := i.(*GuildEmojisUpdate); ok {
-		eh(s, t)
-	}
-}
-
-// guildEventEventHandler is an event handler for GuildEvent events.
-type guildEventEventHandler func(*Session, *GuildEvent)
-
-// Type returns the event type for GuildEvent events.
-func (eh guildEventEventHandler) Type() string {
-	return guildEventEventType
-}
-
-// New returns a new instance of GuildEvent.
-func (eh guildEventEventHandler) New() interface{} {
-	return &GuildEvent{}
-}
-
-// Handle is the handler for GuildEvent events.
-func (eh guildEventEventHandler) Handle(s *Session, i interface{}) {
-	if t, ok := i.(*GuildEvent); ok {
 		eh(s, t)
 	}
 }
@@ -1005,8 +963,6 @@ func handlerForInterface(handler interface{}) EventHandler {
 		return channelCreateEventHandler(v)
 	case func(*Session, *ChannelDelete):
 		return channelDeleteEventHandler(v)
-	case func(*Session, *ChannelEvent):
-		return channelEventEventHandler(v)
 	case func(*Session, *ChannelPinsUpdate):
 		return channelPinsUpdateEventHandler(v)
 	case func(*Session, *ChannelUpdate):
@@ -1027,8 +983,6 @@ func handlerForInterface(handler interface{}) EventHandler {
 		return guildDeleteEventHandler(v)
 	case func(*Session, *GuildEmojisUpdate):
 		return guildEmojisUpdateEventHandler(v)
-	case func(*Session, *GuildEvent):
-		return guildEventEventHandler(v)
 	case func(*Session, *GuildIntegrationsUpdate):
 		return guildIntegrationsUpdateEventHandler(v)
 	case func(*Session, *GuildMemberAdd):
@@ -1105,7 +1059,6 @@ func handlerForInterface(handler interface{}) EventHandler {
 func init() {
 	registerInterfaceProvider(channelCreateEventHandler(nil))
 	registerInterfaceProvider(channelDeleteEventHandler(nil))
-	registerInterfaceProvider(channelEventEventHandler(nil))
 	registerInterfaceProvider(channelPinsUpdateEventHandler(nil))
 	registerInterfaceProvider(channelUpdateEventHandler(nil))
 	registerInterfaceProvider(guildBanAddEventHandler(nil))
@@ -1113,7 +1066,6 @@ func init() {
 	registerInterfaceProvider(guildCreateEventHandler(nil))
 	registerInterfaceProvider(guildDeleteEventHandler(nil))
 	registerInterfaceProvider(guildEmojisUpdateEventHandler(nil))
-	registerInterfaceProvider(guildEventEventHandler(nil))
 	registerInterfaceProvider(guildIntegrationsUpdateEventHandler(nil))
 	registerInterfaceProvider(guildMemberAddEventHandler(nil))
 	registerInterfaceProvider(guildMemberRemoveEventHandler(nil))

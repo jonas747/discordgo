@@ -13,11 +13,12 @@ package discordgo
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jonas747/gojay"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/gojay"
 )
 
 // Timestamp stores a timestamp, as sent by the Discord API.
@@ -203,4 +204,12 @@ func DecodeSnowflake(dst *int64, dec *gojay.Decoder) error {
 	parsed, err := strconv.ParseInt(str, 10, 64)
 	*dst = parsed
 	return err
+}
+
+type GuildEvent interface {
+	GetGuildID() int64
+}
+
+type ChannelEvent interface {
+	GetChannelID() int64
 }
