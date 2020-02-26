@@ -1089,3 +1089,11 @@ const (
 
 	ErrCodeReactionBlocked = 90001
 )
+
+// InviteUser is a partial user obejct from the invite event(s)
+type InviteUser struct {
+	ID            int64  `json:"id,string"`
+	Avatar        string `json:"avatar"`
+	Discriminator string `json:"discriminator"`
+	Username      string `json:"username"`
+}
