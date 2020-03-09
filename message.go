@@ -78,7 +78,7 @@ type Message struct {
 
 	// A list of users mentioned in the message.
 	Mentions []*User `json:"mentions"`
-	
+
 	// Whether the message is pinned or not.
 	Pinned bool `json:"pinned"`
 
@@ -91,6 +91,8 @@ type Message struct {
 	WebhookID int64 `json:"webhook_id,string"`
 
 	Member *Member `json:"member"`
+
+	AllowedMentions AllowedMentionType `json:"allowed_mentions"`
 }
 
 func (m *Message) GetGuildID() int64 {
@@ -110,10 +112,11 @@ type File struct {
 
 // MessageSend stores all parameters you can send with ChannelMessageSendComplex.
 type MessageSend struct {
-	Content string        `json:"content,omitempty"`
-	Embed   *MessageEmbed `json:"embed,omitempty"`
-	Tts     bool          `json:"tts"`
-	Files   []*File       `json:"-"`
+	Content         string          `json:"content,omitempty"`
+	Embed           *MessageEmbed   `json:"embed,omitempty"`
+	Tts             bool            `json:"tts"`
+	Files           []*File         `json:"-"`
+	AllowedMentions AllowedMentions `json:"allowed_mentions"`
 
 	// TODO: Remove this when compatibility is not required.
 	File *File `json:"-"`
@@ -122,8 +125,9 @@ type MessageSend struct {
 // MessageEdit is used to chain parameters via ChannelMessageEditComplex, which
 // is also where you should get the instance from.
 type MessageEdit struct {
-	Content *string       `json:"content,omitempty"`
-	Embed   *MessageEmbed `json:"embed,omitempty"`
+	Content         *string          `json:"content,omitempty"`
+	Embed           *MessageEmbed    `json:"embed,omitempty"`
+	AllowedMentions *AllowedMentions `json:"allowed_mentions,omitempty"`
 
 	ID      int64
 	Channel int64
@@ -230,9 +234,9 @@ type MessageEmbed struct {
 	Provider    *MessageEmbedProvider  `json:"provider,omitempty"`
 	Author      *MessageEmbedAuthor    `json:"author,omitempty"`
 	Fields      []*MessageEmbedField   `json:"fields,omitempty"`
-	
+
 	//flag that tells the marshaller to marshal struct as nil
-	marshalnil  bool		   `json:"-"`
+	marshalnil bool `json:"-"`
 }
 
 func (e *MessageEmbed) MarshalNil(flag bool) *MessageEmbed {
@@ -250,8 +254,9 @@ func (e *MessageEmbed) MarshalJSON() ([]byte, error) {
 		return json.Marshal(nil)
 	}
 	type EmbedAlias MessageEmbed
-	return json.Marshal(&struct{*EmbedAlias}{EmbedAlias: (*EmbedAlias)(e),})
+	return json.Marshal(&struct{ *EmbedAlias }{EmbedAlias: (*EmbedAlias)(e)})
 }
+
 // MessageReactions holds a reactions object for a message.
 type MessageReactions struct {
 	Count int    `json:"count"`
@@ -327,4 +332,23 @@ func (m *Message) ContentWithMoreMentionsReplaced(s *Session) (content string, e
 		return "#" + channel.Name
 	})
 	return
+}
+
+type AllowedMentionType string
+
+const (
+	AllowedMentionTypeRoles   AllowedMentionType = "roles"
+	AllowedMentionTypeUsers   AllowedMentionType = "users"
+	AllowedMentionTyeEveryone AllowedMentionType = "everyone"
+)
+
+type AllowedMentions struct {
+	// Allowed mention types to parse from message content
+	Parse []AllowedMentionType `json:"parse"`
+
+	// Slice of role ids to mention
+	Roles IDSlice `json:"roles,string"`
+
+	// Slice of users to mention
+	Users IDSlice `json:"users,string"`
 }
