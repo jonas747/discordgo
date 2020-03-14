@@ -337,8 +337,8 @@ func (m *Message) ContentWithMoreMentionsReplaced(s *Session) (content string, e
 type AllowedMentionType string
 
 const (
-	AllowedMentionTypeRoles   AllowedMentionType = "roles"
-	AllowedMentionTypeUsers   AllowedMentionType = "users"
+	AllowedMentionTypeRoles    AllowedMentionType = "roles"
+	AllowedMentionTypeUsers    AllowedMentionType = "users"
 	AllowedMentionTypeEveryone AllowedMentionType = "everyone"
 )
 
