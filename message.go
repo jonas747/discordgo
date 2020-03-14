@@ -339,7 +339,7 @@ type AllowedMentionType string
 const (
 	AllowedMentionTypeRoles   AllowedMentionType = "roles"
 	AllowedMentionTypeUsers   AllowedMentionType = "users"
-	AllowedMentionTyeEveryone AllowedMentionType = "everyone"
+	AllowedMentionTypeEveryone AllowedMentionType = "everyone"
 )
 
 type AllowedMentions struct {
