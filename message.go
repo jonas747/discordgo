@@ -91,8 +91,6 @@ type Message struct {
 	WebhookID int64 `json:"webhook_id,string"`
 
 	Member *Member `json:"member"`
-
-	AllowedMentions AllowedMentionType `json:"allowed_mentions"`
 }
 
 func (m *Message) GetGuildID() int64 {
