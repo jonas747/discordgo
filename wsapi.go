@@ -2,12 +2,13 @@ package discordgo
 
 import (
 	"encoding/json"
-	"github.com/gobwas/ws"
-	"github.com/gobwas/ws/wsutil"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/gobwas/ws"
+	"github.com/gobwas/ws/wsutil"
 )
 
 type wsWriter struct {
@@ -100,7 +101,7 @@ func (w *wsWriter) writeRaw(data []byte) error {
 }
 
 func (w *wsWriter) sendClose(body []byte) error {
-	_, err := w.conn.Write(body)
+	_, err := w.writer.WriteThrough(body)
 	return err
 }
 
