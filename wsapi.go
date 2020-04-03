@@ -101,8 +101,9 @@ func (w *wsWriter) writeRaw(data []byte) error {
 }
 
 func (w *wsWriter) sendClose(body []byte) error {
-	_, err := w.writer.WriteThrough(body)
+	_, err := w.conn.Write(body)
 	return err
+
 }
 
 func (w *wsWriter) Queue(data interface{}) {

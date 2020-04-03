@@ -626,7 +626,13 @@ func (g *GatewayConnection) Close() error {
 
 	if wasRunning {
 		// Send the close frame
-		g.writer.QueueClose(ws.CompiledCloseNormalClosure)
+		frame := ws.NewCloseFrame(ws.NewCloseFrameBody(
+			ws.StatusNormalClosure, "",
+		))
+
+		frame = ws.MaskFrameInPlace(frame)
+		compiled := ws.MustCompileFrame(frame)
+		g.writer.QueueClose(compiled)
 
 		close(g.stopWorkers)
 
