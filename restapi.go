@@ -2216,6 +2216,17 @@ func (s *Session) MessageReactionRemoveMe(channelID, messageID int64, emoji stri
 	return err
 }
 
+// MessageReactionRemoveEmoji deletes all emoji reactions in a message.
+// channelID : The channel ID.
+// messageID : The message ID.
+// emoji     : Either the unicode emoji for the reaction, or a guild emoji identifier.
+func (s *Session) MessageReactionRemoveEmoji(channelID, messageID int64, emoji string) error {
+
+	_, err := s.RequestWithBucketID("DELETE", EndpointMessageReactions(channelID, messageID, EmojiName{emoji}), nil, EndpointMessageReactions(channelID, 0, EmojiName{""}))
+
+	return err
+}
+
 // MessageReactionsRemoveAll deletes all reactions from a message
 // channelID : The channel ID
 // messageID : The message ID.
