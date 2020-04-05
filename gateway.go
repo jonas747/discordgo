@@ -627,7 +627,7 @@ func (g *GatewayConnection) Close() error {
 	if wasRunning {
 		// Send the close frame
 		frame := ws.NewCloseFrame(ws.NewCloseFrameBody(
-			ws.StatusNormalClosure, "",
+			4000, "",
 		))
 
 		frame = ws.MaskFrameInPlace(frame)
