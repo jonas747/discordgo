@@ -274,7 +274,26 @@ func (g *GatewayConnectionManager) RequestGuildMembers(guildID int64, query stri
 		return
 	}
 
-	conn.RequestGuildMembers(guildID, query, limit)
+	conn.RequestGuildMembers(&requestGuildMembersData{
+		GuildID: guildID,
+		Query:   &query,
+		Limit:   limit,
+	})
+}
+
+func (g *GatewayConnectionManager) RequestGuildMemberByID(guildID int64, query int64, limit int) {
+	g.mu.RLock()
+	conn := g.currentConnection
+	g.mu.RUnlock()
+	if conn == nil {
+		return
+	}
+
+	conn.RequestGuildMembers(&requestGuildMembersData{
+		GuildID: guildID,
+		Limit:   limit,
+		UserIDs: []int64{query},
+	})
 }
 
 type voiceChannelJoinData struct {
@@ -1192,14 +1211,10 @@ func (g *GatewayConnection) resume(sessionID string, sequence int64) error {
 	return nil
 }
 
-func (g *GatewayConnection) RequestGuildMembers(guildID int64, query string, limit int) {
+func (g *GatewayConnection) RequestGuildMembers(d *requestGuildMembersData) {
 	op := &outgoingEvent{
 		Operation: GatewayOPRequestGuildMembers,
-		Data: &requestGuildMembersData{
-			GuildID: guildID,
-			Query:   query,
-			Limit:   limit,
-		},
+		Data:      d,
 	}
 
 	g.log(LogInformational, "Sending request guild members")
@@ -1270,7 +1285,10 @@ type UpdateStatusData struct {
 }
 
 type requestGuildMembersData struct {
-	GuildID int64  `json:"guild_id,string"`
-	Query   string `json:"query"`
-	Limit   int    `json:"limit"`
+	GuildID   int64 `json:"guild_id,string"`
+	Limit     int   `json:"limit"`
+	Presences bool  `json:"presences"`
+
+	Query   *string `json:"query,omitempty"`
+	UserIDs IDSlice `json:"user_ids,omitempty"`
 }
