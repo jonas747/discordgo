@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -147,7 +148,7 @@ func (emoji EmojiName) String() string {
 	// Discord does not accept the emoji qualifier character.
 	// return strings.Replace(emoji.string, "\uFE0F", "", 1)
 	// this no longer the case? in fact its required?
-	return emoji.string
+	return url.PathEscape(emoji.string)
 }
 
 // Discord is super inconsistent with with types in some places (especially presence updates,
