@@ -243,10 +243,7 @@ func (g *GatewayConnectionManager) initSharding() {
 
 // Status returns the status of the current active connection
 func (g *GatewayConnectionManager) Status() GatewayStatus {
-	g.mu.RLock()
-	cc := g.currentConnection
-	g.mu.RUnlock()
-
+	cc := g.GetCurrentConnection()
 	if cc == nil {
 		return GatewayStatusDisconnected
 	}
@@ -255,9 +252,7 @@ func (g *GatewayConnectionManager) Status() GatewayStatus {
 }
 
 func (g *GatewayConnectionManager) HeartBeatStats() (lastSend time.Time, lastAck time.Time) {
-	g.mu.RLock()
-	conn := g.currentConnection
-	g.mu.RUnlock()
+	conn := g.GetCurrentConnection()
 	if conn == nil {
 		return
 	}
@@ -267,14 +262,12 @@ func (g *GatewayConnectionManager) HeartBeatStats() (lastSend time.Time, lastAck
 }
 
 func (g *GatewayConnectionManager) RequestGuildMembers(guildID int64, query string, limit int) {
-	g.mu.RLock()
-	conn := g.currentConnection
-	g.mu.RUnlock()
+	conn := g.GetCurrentConnection()
 	if conn == nil {
 		return
 	}
 
-	conn.RequestGuildMembers(&requestGuildMembersData{
+	conn.RequestGuildMembers(&RequestGuildMembersData{
 		GuildID: guildID,
 		Query:   &query,
 		Limit:   limit,
@@ -282,18 +275,32 @@ func (g *GatewayConnectionManager) RequestGuildMembers(guildID int64, query stri
 }
 
 func (g *GatewayConnectionManager) RequestGuildMemberByID(guildID int64, query int64, limit int) {
-	g.mu.RLock()
-	conn := g.currentConnection
-	g.mu.RUnlock()
+	conn := g.GetCurrentConnection()
 	if conn == nil {
 		return
 	}
 
-	conn.RequestGuildMembers(&requestGuildMembersData{
+	conn.RequestGuildMembers(&RequestGuildMembersData{
 		GuildID: guildID,
 		Limit:   limit,
 		UserIDs: []int64{query},
 	})
+}
+
+func (g *GatewayConnectionManager) RequestGuildMembersComplex(d *RequestGuildMembersData) {
+	conn := g.GetCurrentConnection()
+	if conn == nil {
+		return
+	}
+
+	conn.RequestGuildMembers(d)
+}
+
+func (g *GatewayConnectionManager) GetCurrentConnection() *GatewayConnection {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	return g.currentConnection
 }
 
 type voiceChannelJoinData struct {
@@ -1211,7 +1218,7 @@ func (g *GatewayConnection) resume(sessionID string, sequence int64) error {
 	return nil
 }
 
-func (g *GatewayConnection) RequestGuildMembers(d *requestGuildMembersData) {
+func (g *GatewayConnection) RequestGuildMembers(d *RequestGuildMembersData) {
 	op := &outgoingEvent{
 		Operation: GatewayOPRequestGuildMembers,
 		Data:      d,
@@ -1284,11 +1291,12 @@ type UpdateStatusData struct {
 	Status    string `json:"status"`
 }
 
-type requestGuildMembersData struct {
+type RequestGuildMembersData struct {
 	GuildID   int64 `json:"guild_id,string"`
 	Limit     int   `json:"limit"`
 	Presences bool  `json:"presences"`
 
 	Query   *string `json:"query,omitempty"`
 	UserIDs IDSlice `json:"user_ids,omitempty"`
+	Nonce   string  `json:"nonce"`
 }

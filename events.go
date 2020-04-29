@@ -190,8 +190,11 @@ func (e *GuildEmojisUpdate) GetGuildID() int64 {
 
 // A GuildMembersChunk is the data for a GuildMembersChunk event.
 type GuildMembersChunk struct {
-	GuildID int64     `json:"guild_id,string"`
-	Members []*Member `json:"members"`
+	GuildID    int64     `json:"guild_id,string"`
+	Members    []*Member `json:"members"`
+	ChunkIndex int       `json:"chunk_index"`
+	ChunkCount int       `json:"chunk_count"`
+	Nonce      string    `json:"nonce"`
 }
 
 func (e *GuildMembersChunk) GetGuildID() int64 {
