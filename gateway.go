@@ -653,7 +653,7 @@ func (g *GatewayConnection) Close() error {
 	if wasRunning {
 		// Send the close frame
 		frame := ws.NewCloseFrame(ws.NewCloseFrameBody(
-			4000, "",
+			4000, "o7",
 		))
 
 		frame = ws.MaskFrameInPlace(frame)
