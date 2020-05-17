@@ -20,6 +20,7 @@ import (
 
 	"github.com/jonas747/gojay"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 )
 
 // A Session represents a connection to the Discord API.
@@ -240,7 +241,7 @@ type ChannelEdit struct {
 	Bitrate              int                    `json:"bitrate,omitempty"`
 	UserLimit            int                    `json:"user_limit,omitempty"`
 	PermissionOverwrites []*PermissionOverwrite `json:"permission_overwrites,omitempty"`
-	ParentID             string                 `json:"parent_id,omitempty"`
+	ParentID             *null.String           `json:"parent_id,omitempty"`
 	RateLimitPerUser     *int                   `json:"rate_limit_per_user,omitempty"`
 }
 
