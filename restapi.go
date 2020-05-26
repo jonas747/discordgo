@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 )
 
 // All error constants
@@ -940,7 +941,7 @@ func (s *Session) GuildMemberEdit(guildID, userID int64, roles []string) (err er
 func (s *Session) GuildMemberMove(guildID, userID, channelID int64) (err error) {
 
 	data := struct {
-		ChannelID int64 `json:"channel_id,string"`
+		ChannelID null.Int64 `json:"channel_id,string"`
 	}{channelID}
 
 	_, err = s.RequestWithBucketID("PATCH", EndpointGuildMember(guildID, userID), data, EndpointGuildMember(guildID, 0))
