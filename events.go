@@ -332,6 +332,16 @@ type UserUpdate struct {
 	*User
 }
 
+// implement gojay.UnmarshalerJSONObject
+func (u *UserUpdate) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
+	u.User = &User{}
+	return u.User.UnmarshalJSONObject(dec, key)
+}
+
+func (u *UserUpdate) NKeys() int {
+	return 0
+}
+
 // UserSettingsUpdate is the data for a UserSettingsUpdate event.
 type UserSettingsUpdate map[string]interface{}
 
