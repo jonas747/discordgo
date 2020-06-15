@@ -326,6 +326,10 @@ type Guild struct {
 	// The name of the guild. (2–100 characters)
 	Name string `json:"name"`
 
+	Description string `json:"description"`
+
+	PreferredLocale string `json:"preferred_locale"`
+
 	// The hash of the guild's icon. Use Session.GuildIcon
 	// to retrieve the icon itself.
 	Icon string `json:"icon"`
@@ -631,6 +635,7 @@ func (g *Game) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
 	case "state":
 		return dec.String(&g.State)
 	case "timestamps":
+		return dec.Object(&g.TimeStamps)
 	case "assets":
 	case "application_id":
 		return dec.String(&g.ApplicationID)
@@ -649,6 +654,17 @@ func (g *Game) NKeys() int {
 type TimeStamps struct {
 	EndTimestamp   int64 `json:"end,omitempty"`
 	StartTimestamp int64 `json:"start,omitempty"`
+}
+
+func (t *TimeStamps) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
+	switch key {
+	case "start":
+		return dec.Int64(&t.StartTimestamp)
+	case "end":
+		return dec.Int64(&t.EndTimestamp)
+	}
+
+	return nil
 }
 
 // UnmarshalJSON unmarshals JSON into TimeStamps struct
@@ -681,6 +697,10 @@ func (t *TimeStamps) UnmarshalJSON(b []byte) error {
 	t.EndTimestamp = int64(endParsed)
 	t.StartTimestamp = int64(startParsed)
 	return nil
+}
+
+func (t *TimeStamps) NKeys() int {
+	return 0
 }
 
 // An Assets struct contains assets and labels used in the rich presence "playing .." Game
