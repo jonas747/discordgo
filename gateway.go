@@ -1121,7 +1121,7 @@ func (g *GatewayConnection) handleReadMessage() {
 		return
 	}
 
-	if g.decodedBuffer.Cap() > MaxIntermediaryBuffersSize && g.decodedBuffer.Len() < MaxIntermediaryBuffersSize {
+	if g.decodedBuffer.Cap() > MaxIntermediaryBuffersSize {
 		maybeThrowawayBytesBuf(&g.decodedBuffer, MaxIntermediaryBuffersSize)
 		g.jsonDecoder = gojay.NewDecoder(g.teeReader)
 	}
@@ -1232,9 +1232,9 @@ func (g *GatewayConnection) handleDispatch(e *Event) error {
 		g.log(LogWarning, "unknown event: Op: %d, Seq: %d, Type: %s, Data: %s", e.Operation, e.Sequence, e.Type, string(e.RawData))
 	}
 
-	if g.secondPassBuf.Cap() > MaxIntermediaryBuffersSize && len(e.RawData) < MaxIntermediaryBuffersSize {
-		g.secondPassJsonDecoder = json.NewDecoder(g.secondPassBuf)
+	if g.secondPassBuf.Cap() > MaxIntermediaryBuffersSize {
 		maybeThrowawayBytesBuf(g.secondPassBuf, MaxIntermediaryBuffersSize)
+		g.secondPassJsonDecoder = json.NewDecoder(g.secondPassBuf)
 	}
 
 	// For legacy reasons, we send the raw event also, this could be useful for handling unknown events.
