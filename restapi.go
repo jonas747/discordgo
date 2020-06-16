@@ -794,19 +794,16 @@ func (s *Session) GuildBanCreateWithReason(guildID, userID int64, reason string,
 
 	uri := EndpointGuildBan(guildID, userID)
 
-	queryParams := url.Values{}
+	data := make(map[string]interface{})
 	if days > 0 {
-		queryParams.Set("delete-message-days", strconv.Itoa(days))
+		data["delete-message-days"] = days
 	}
+
 	if reason != "" {
-		queryParams.Set("reason", reason)
+		data["reason"] = reason
 	}
 
-	if len(queryParams) > 0 {
-		uri += "?" + queryParams.Encode()
-	}
-
-	_, err = s.RequestWithBucketID("PUT", uri, nil, EndpointGuildBan(guildID, 0))
+	_, err = s.RequestWithBucketID("PUT", uri, data, EndpointGuildBan(guildID, 0))
 	return
 }
 
