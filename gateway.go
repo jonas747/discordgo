@@ -199,8 +199,6 @@ type GatewayConnectionManager struct {
 	mu     sync.RWMutex
 	openmu sync.Mutex
 
-	intents []GatewayIntent
-
 	voiceConnections map[int64]*VoiceConnection
 
 	// stores sessions current Discord Gateway
@@ -240,11 +238,6 @@ func (s *GatewayConnectionManager) GetSessionInfo() (sessionID string, sequence 
 // Open is a helper for Session.GatewayConnectionManager.Open()
 func (s *Session) Open() error {
 	return s.GatewayManager.Open()
-}
-
-// Open is a helper for Session.GatewayConnectionManager.Open()
-func (s *Session) OpenWithIntents(intents ...GatewayIntent) error {
-	return s.GatewayManager.OpenWithIntents(intents...)
 }
 
 var (
@@ -288,7 +281,7 @@ func (g *GatewayConnectionManager) Open() error {
 
 	g.initSharding()
 
-	newConn := NewGatewayConnection(g, g.idCounter, g.intents)
+	newConn := NewGatewayConnection(g, g.idCounter, g.session.Intents)
 
 	// Opening may be a long process, with ratelimiting and whatnot
 	// we wanna be able to query things like status in the meantime
@@ -312,14 +305,6 @@ func (g *GatewayConnectionManager) Open() error {
 	g.mu.Unlock()
 
 	return err
-}
-
-func (g *GatewayConnectionManager) OpenWithIntents(intents ...GatewayIntent) error {
-	g.mu.Lock()
-	g.intents = intents
-	g.mu.Unlock()
-
-	return g.Open()
 }
 
 // initSharding sets the sharding details and verifies that they are valid

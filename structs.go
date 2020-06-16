@@ -28,8 +28,9 @@ type Session struct {
 	// General configurable settings.
 
 	// Authentication token for this session
-	Token string
-	MFA   bool
+	Token   string
+	MFA     bool
+	Intents []GatewayIntent
 
 	// Debug for printing JSON request/responses
 	Debug    bool // Deprecated, will be removed.
