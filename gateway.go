@@ -37,6 +37,81 @@ var (
 	ErrAlreadyOpen = errors.New("Connection already open")
 )
 
+type GatewayIntent int
+
+const (
+	GatewayIntentGuilds GatewayIntent = 1 << 0
+	// - GUILD_CREATE
+	// - GUILD_UPDATE
+	// - GUILD_DELETE
+	// - GUILD_ROLE_CREATE
+	// - GUILD_ROLE_UPDATE
+	// - GUILD_ROLE_DELETE
+	// - CHANNEL_CREATE
+	// - CHANNEL_UPDATE
+	// - CHANNEL_DELETE
+	// - CHANNEL_PINS_UPDATE
+
+	GatewayIntentGuildMembers GatewayIntent = 1 << 1
+	// - GUILD_MEMBER_ADD
+	// - GUILD_MEMBER_UPDATE
+	// - GUILD_MEMBER_REMOVE
+
+	GatewayIntentGuildBans GatewayIntent = 1 << 2
+	// - GUILD_BAN_ADD
+	// - GUILD_BAN_REMOVE
+
+	GatewayIntentGuildEmojis GatewayIntent = 1 << 3
+	// - GUILD_EMOJIS_UPDATE
+
+	GatewayIntentGuildIntegrations GatewayIntent = 1 << 4
+	// - GUILD_INTEGRATIONS_UPDATE
+
+	GatewayIntentGuildWebhooks GatewayIntent = 1 << 5
+	// - WEBHOOKS_UPDATE
+
+	GatewayIntentGuildInvites GatewayIntent = 1 << 6
+	// - INVITE_CREATE
+	// - INVITE_DELETE
+
+	GatewayIntentGuildVoiceStates GatewayIntent = 1 << 7
+	// - VOICE_STATE_UPDATE
+
+	GatewayIntentGuildPresences GatewayIntent = 1 << 8
+	// - PRESENCE_UPDATE
+
+	GatewayIntentGuildMessages GatewayIntent = 1 << 9
+	// - MESSAGE_CREATE
+	// - MESSAGE_UPDATE
+	// - MESSAGE_DELETE
+	// - MESSAGE_DELETE_BULK
+
+	GatewayIntentGuildMessageReactions GatewayIntent = 1 << 10
+	// - MESSAGE_REACTION_ADD
+	// - MESSAGE_REACTION_REMOVE
+	// - MESSAGE_REACTION_REMOVE_ALL
+	// - MESSAGE_REACTION_REMOVE_EMOJI
+
+	GatewayIntentGuildMessageTyping GatewayIntent = 1 << 11
+	// - TYPING_START
+
+	GatewayIntentDirectMessages GatewayIntent = 1 << 12
+	// - CHANNEL_CREATE
+	// - MESSAGE_CREATE
+	// - MESSAGE_UPDATE
+	// - MESSAGE_DELETE
+	// - CHANNEL_PINS_UPDATE
+
+	GatewayIntentDirectMessageReactions GatewayIntent = 1 << 13
+	// - MESSAGE_REACTION_ADD
+	// - MESSAGE_REACTION_REMOVE
+	// - MESSAGE_REACTION_REMOVE_ALL
+	// - MESSAGE_REACTION_REMOVE_EMOJI
+
+	GatewayIntentDirectMessageTyping GatewayIntent = 1 << 14
+	// - TYPING_START
+)
+
 // max size of buffers before they're discarded (e.g after a big incmoing event)
 const MaxIntermediaryBuffersSize = 100000
 
@@ -124,6 +199,8 @@ type GatewayConnectionManager struct {
 	mu     sync.RWMutex
 	openmu sync.Mutex
 
+	intents []GatewayIntent
+
 	voiceConnections map[int64]*VoiceConnection
 
 	// stores sessions current Discord Gateway
@@ -141,7 +218,7 @@ type GatewayConnectionManager struct {
 
 	idCounter int
 
-	authFailed bool
+	errorStopReconnects error // set when an error occurs that should stop reconnects (such as bad token, and other things)
 }
 
 func (s *GatewayConnectionManager) SetSessionInfo(sessionID string, sequence int64) {
@@ -165,7 +242,17 @@ func (s *Session) Open() error {
 	return s.GatewayManager.Open()
 }
 
-var ErrBadAuth = errors.New("Authentication failed")
+// Open is a helper for Session.GatewayConnectionManager.Open()
+func (s *Session) OpenWithIntents(intents ...GatewayIntent) error {
+	return s.GatewayManager.OpenWithIntents(intents...)
+}
+
+var (
+	ErrBadAuth        = errors.New("Authentication failed")
+	ErrInvalidIntent  = errors.New("One of the gateway intents passed was invalid")
+	ErrDisabledIntent = errors.New("A intent you specified has not been enabled or not been whitelisted for")
+	ErrInvalidShard   = errors.New("You specified a invalid sharding setup")
+)
 
 func (g *GatewayConnectionManager) Open() error {
 	g.session.log(LogInformational, " called")
@@ -174,9 +261,9 @@ func (g *GatewayConnectionManager) Open() error {
 	defer g.openmu.Unlock()
 
 	g.mu.Lock()
-	if g.authFailed {
+	if g.errorStopReconnects != nil {
 		g.mu.Unlock()
-		return ErrBadAuth
+		return g.errorStopReconnects
 	}
 
 	if g.currentConnection != nil {
@@ -201,7 +288,7 @@ func (g *GatewayConnectionManager) Open() error {
 
 	g.initSharding()
 
-	newConn := NewGatewayConnection(g, g.idCounter)
+	newConn := NewGatewayConnection(g, g.idCounter, g.intents)
 
 	// Opening may be a long process, with ratelimiting and whatnot
 	// we wanna be able to query things like status in the meantime
@@ -225,6 +312,14 @@ func (g *GatewayConnectionManager) Open() error {
 	g.mu.Unlock()
 
 	return err
+}
+
+func (g *GatewayConnectionManager) OpenWithIntents(intents ...GatewayIntent) error {
+	g.mu.Lock()
+	g.intents = intents
+	g.mu.Unlock()
+
+	return g.Open()
 }
 
 // initSharding sets the sharding details and verifies that they are valid
@@ -512,6 +607,7 @@ type GatewayConnection struct {
 
 	// The parent manager
 	manager *GatewayConnectionManager
+	intents []GatewayIntent
 
 	opened         bool
 	workersRunning bool
@@ -553,7 +649,7 @@ type GatewayConnection struct {
 	event *Event
 }
 
-func NewGatewayConnection(parent *GatewayConnectionManager, id int) *GatewayConnection {
+func NewGatewayConnection(parent *GatewayConnectionManager, id int, intents []GatewayIntent) *GatewayConnection {
 	gwc := &GatewayConnection{
 		manager:           parent,
 		stopWorkers:       make(chan interface{}),
@@ -562,6 +658,7 @@ func NewGatewayConnection(parent *GatewayConnectionManager, id int) *GatewayConn
 		status:            GatewayStatusConnecting,
 		event:             &Event{},
 		secondPassBuf:     &bytes.Buffer{},
+		intents:           intents,
 	}
 
 	secondPassJson := json.NewDecoder(gwc.secondPassBuf)
@@ -959,19 +1056,36 @@ func (g *GatewayConnection) handleCloseFrame(data []byte) {
 	g.log(LogError, "got close frame, code: %d, Msg: %q", code, msg)
 
 	go func() {
-		if code == 4004 {
-			g.manager.mu.Lock()
-			g.manager.authFailed = true
-			g.manager.mu.Unlock()
 
-			g.Close()
-			g.log(LogError, "Authentication failed")
-		} else {
+		if code != 4004 && code != 4013 && code != 4014 && code != 4010 {
 			err := g.ReconnectUnlessClosed(false)
 			if err != nil {
 				g.log(LogError, "failed reconnecting to the gateway: %v", err)
 			}
+
+			return
 		}
+
+		g.manager.mu.Lock()
+
+		switch code {
+		case 4004:
+			g.manager.errorStopReconnects = ErrBadAuth
+			g.log(LogError, "Authentication failed")
+		case 4013:
+			g.manager.errorStopReconnects = ErrInvalidIntent
+			g.log(LogError, "Invalid intent passed to gateway open")
+		case 4014:
+			g.manager.errorStopReconnects = ErrDisabledIntent
+			g.log(LogError, "Disabled or not whitelisted for one of the intents passed to gateway open")
+		case 4010:
+			g.manager.errorStopReconnects = ErrInvalidShard
+			g.log(LogError, "Invalid shard specified")
+		}
+
+		g.manager.mu.Unlock()
+
+		g.Close()
 	}()
 }
 
@@ -1159,10 +1273,19 @@ func (g *GatewayConnection) handleResumed(r *Resumed) {
 func (g *GatewayConnection) identify() error {
 	properties := identifyProperties{
 		OS:              runtime.GOOS,
-		Browser:         "Discordgo v" + VERSION,
+		Browser:         "Discordgo-jonas747_fork v" + VERSION,
 		Device:          "",
 		Referer:         "",
 		ReferringDomain: "",
+	}
+
+	var intents *int
+	if len(g.intents) > 0 {
+		compiled := 0
+		for _, v := range g.intents {
+			compiled |= int(v)
+		}
+		intents = &compiled
 	}
 
 	data := identifyData{
@@ -1172,6 +1295,7 @@ func (g *GatewayConnection) identify() error {
 		// Compress:      g.manager.session.Compress, // this is no longer needed since we use zlib-steam anyways
 		Shard:              nil,
 		GuildSubscriptions: true,
+		Intents:            intents,
 	}
 
 	if g.manager.shardCount > 1 {
@@ -1263,6 +1387,7 @@ type identifyData struct {
 	Compress           bool               `json:"compress"`
 	GuildSubscriptions bool               `json:"guild_subscriptions"`
 	Shard              *[2]int            `json:"shard,omitempty"`
+	Intents            *int               `json:"intents,omitempty"`
 }
 
 type identifyProperties struct {
