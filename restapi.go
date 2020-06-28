@@ -31,7 +31,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
 )
 
 // All error constants
