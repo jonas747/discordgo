@@ -11,6 +11,7 @@
 package discordgo
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
