@@ -63,6 +63,39 @@ func (r RESTError) Error() string {
 	return fmt.Sprintf("HTTP %s, %s", r.Response.Status, r.ResponseBody)
 }
 
+// nullIntID is a snowflake id that marshals to "null" if value is 0 and otherwise marshals as a string in the way discord expects ids to behave.
+// It marshals to null or string representation of number according to value and unmarshals from both string and integer representations.
+
+type nullIntID int
+
+func(i nullIntID) MarshalJSON() ([]byte, error) {
+    if i == 0 {
+        return json.Marshal(nil)
+    } 
+    return []byte(fmt.Sprintf(`"%d"`, i)), nil
+}
+
+func(i *nullIntID) UnmarshalJSON(data []byte) error {
+    length := len(data)
+    if bytes.Equal(data, []byte("null")) {
+        *i = 0
+        return nil
+    }
+
+    if length > 2 && string(data[0]) == `"` && string(data[length -1]) == `"` {
+	data = data[1:length-1]
+    }
+
+    var tempInt int
+    err := json.Unmarshal(data, &tempInt)
+    if err != nil {
+        return err
+    }
+
+    *i = nullIntID(tempInt)
+    return nil
+}
+
 // IDSlice Is a slice of snowflake id's that properly marshals and unmarshals the way discord expects them to
 // They unmarshal from string arrays and marshals back to string arrays
 type IDSlice []int64
