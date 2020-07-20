@@ -114,7 +114,7 @@ const (
 )
 
 // max size of buffers before they're discarded (e.g after a big incmoing event)
-const MaxIntermediaryBuffersSize = 100000
+const MaxIntermediaryBuffersSize = 10000
 
 // GatewayIdentifyRatelimiter is if you need some custom identify ratelimit logic (if you're running shards across processes for example)
 type GatewayIdentifyRatelimiter interface {
@@ -1107,7 +1107,7 @@ func (g *GatewayConnection) handleReadMessage() {
 		return
 	}
 
-	if g.decodedBuffer.Cap() > MaxIntermediaryBuffersSize {
+	if g.decodedBuffer.Cap() > MaxIntermediaryBuffersSize && readLen < MaxIntermediaryBuffersSize {
 		maybeThrowawayBytesBuf(&g.decodedBuffer, MaxIntermediaryBuffersSize)
 		g.jsonDecoder = gojay.NewDecoder(g.teeReader)
 	}
@@ -1175,6 +1175,8 @@ func (g *GatewayConnection) handleHello(event *Event) error {
 
 func (g *GatewayConnection) handleDispatch(e *Event) error {
 
+	size := len(e.RawData)
+
 	// Map event to registered event handlers and pass it along to any registered handlers.
 	if eh, ok := registeredInterfaceProviders[e.Type]; ok {
 		e.Struct = eh.New()
@@ -1222,7 +1224,7 @@ func (g *GatewayConnection) handleDispatch(e *Event) error {
 		g.log(LogWarning, "unknown event: Op: %d, Seq: %d, Type: %s, Data: %s", e.Operation, e.Sequence, e.Type, string(e.RawData))
 	}
 
-	if g.secondPassBuf.Cap() > MaxIntermediaryBuffersSize {
+	if g.secondPassBuf.Cap() > MaxIntermediaryBuffersSize && size < MaxIntermediaryBuffersSize {
 		maybeThrowawayBytesBuf(g.secondPassBuf, MaxIntermediaryBuffersSize)
 		g.secondPassJsonDecoder = json.NewDecoder(g.secondPassBuf)
 	}

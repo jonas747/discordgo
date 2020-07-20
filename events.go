@@ -46,7 +46,7 @@ func (evt *Event) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
 	case "t":
 		return dec.String(&evt.Type)
 	case "d":
-		if cap(evt.RawData) > 1000000 && len(evt.RawData) < 1000000 {
+		if cap(evt.RawData) > 1000000 && len(evt.RawData) < 100000 {
 			evt.RawData = nil
 		} else if evt.RawData != nil {
 			evt.RawData = evt.RawData[:0]
