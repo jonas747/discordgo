@@ -74,7 +74,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo(in *jlexer.Lexer, out *Pre
 				in.Delim('[')
 				if out.Activities == nil {
 					if !in.IsDelim(']') {
-						out.Activities = make(Activities, 0, 8)
+						out.Activities = make(Activities, 0, 2)
 					} else {
 						out.Activities = Activities{}
 					}
@@ -561,7 +561,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo5(in *jlexer.Lexer, out *Gu
 				in.Delim('[')
 				if out.Roles == nil {
 					if !in.IsDelim(']') {
-						out.Roles = make([]*Role, 0, 8)
+						out.Roles = make([]*Role, 0, 2)
 					} else {
 						out.Roles = []*Role{}
 					}
@@ -592,7 +592,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo5(in *jlexer.Lexer, out *Gu
 				in.Delim('[')
 				if out.Emojis == nil {
 					if !in.IsDelim(']') {
-						out.Emojis = make([]*Emoji, 0, 8)
+						out.Emojis = make([]*Emoji, 0, 2)
 					} else {
 						out.Emojis = []*Emoji{}
 					}
@@ -623,7 +623,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo5(in *jlexer.Lexer, out *Gu
 				in.Delim('[')
 				if out.Members == nil {
 					if !in.IsDelim(']') {
-						out.Members = make([]*Member, 0, 8)
+						out.Members = make([]*Member, 0, 2)
 					} else {
 						out.Members = []*Member{}
 					}
@@ -654,7 +654,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo5(in *jlexer.Lexer, out *Gu
 				in.Delim('[')
 				if out.Presences == nil {
 					if !in.IsDelim(']') {
-						out.Presences = make([]*Presence, 0, 8)
+						out.Presences = make([]*Presence, 0, 2)
 					} else {
 						out.Presences = []*Presence{}
 					}
@@ -685,7 +685,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo5(in *jlexer.Lexer, out *Gu
 				in.Delim('[')
 				if out.Channels == nil {
 					if !in.IsDelim(']') {
-						out.Channels = make([]*Channel, 0, 8)
+						out.Channels = make([]*Channel, 0, 2)
 					} else {
 						out.Channels = []*Channel{}
 					}
@@ -716,7 +716,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo5(in *jlexer.Lexer, out *Gu
 				in.Delim('[')
 				if out.VoiceStates == nil {
 					if !in.IsDelim(']') {
-						out.VoiceStates = make([]*VoiceState, 0, 8)
+						out.VoiceStates = make([]*VoiceState, 0, 2)
 					} else {
 						out.VoiceStates = []*VoiceState{}
 					}
@@ -1210,7 +1210,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo10(in *jlexer.Lexer, out *C
 				in.Delim('[')
 				if out.Recipients == nil {
 					if !in.IsDelim(']') {
-						out.Recipients = make([]*User, 0, 8)
+						out.Recipients = make([]*User, 0, 2)
 					} else {
 						out.Recipients = []*User{}
 					}
@@ -1241,7 +1241,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo10(in *jlexer.Lexer, out *C
 				in.Delim('[')
 				if out.PermissionOverwrites == nil {
 					if !in.IsDelim(']') {
-						out.PermissionOverwrites = make([]*PermissionOverwrite, 0, 8)
+						out.PermissionOverwrites = make([]*PermissionOverwrite, 0, 2)
 					} else {
 						out.PermissionOverwrites = []*PermissionOverwrite{}
 					}
@@ -1509,7 +1509,7 @@ func easyjson692db02bDecodeGithubComJonas747Discordgo9(in *jlexer.Lexer, out *Pr
 				in.Delim('[')
 				if out.Activities == nil {
 					if !in.IsDelim(']') {
-						out.Activities = make(Activities, 0, 8)
+						out.Activities = make(Activities, 0, 2)
 					} else {
 						out.Activities = Activities{}
 					}
