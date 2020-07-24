@@ -146,7 +146,7 @@ func (s *Session) doRequestLockedBucket(method, urlStr, contentType string, b []
 	if b != nil {
 		req.Header.Set("Content-Type", contentType)
 	}
-	
+
 	// TODO: Make a configurable static variable.
 	req.Header.Set("User-Agent", fmt.Sprintf("DiscordBot (https://github.com/jonas747/discordgo, v%s)", VERSION))
 	req.Header.Set("X-RateLimit-Precision", "millisecond")
@@ -208,7 +208,7 @@ func (s *Session) doRequestLockedBucket(method, urlStr, contentType string, b []
 		rl := TooManyRequests{}
 		err = json.Unmarshal(response, &rl)
 		if err != nil {
-			s.log(LogError, "rate limit unmarshal error, %s, %q", err, string(response))
+			s.log(LogError, "rate limit unmarshal error, %s, %q, url: %s", err, string(response), urlStr)
 			return
 		}
 
