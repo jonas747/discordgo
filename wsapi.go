@@ -158,19 +158,16 @@ func (wh *wsHeartBeater) Run(interval time.Duration) {
 		case <-ticker.C:
 
 			wh.Lock()
+			timeSinceAck := time.Since(wh.lastAck)
 			hasReceivedAck := wh.receivedAck
 			wh.receivedAck = false
-			wh.missedAcks++
-			missed := wh.missedAcks
-
-			wh.lastSend = time.Now()
 			wh.Unlock()
 
-			if !hasReceivedAck && wh.onNoAck != nil && missed > 4 {
+			if !hasReceivedAck && timeSinceAck >= interval {
 				wh.onNoAck()
+			} else {
+				wh.SendBeat()
 			}
-
-			wh.SendBeat()
 		case <-wh.stop:
 			return
 		}
