@@ -922,6 +922,9 @@ func (g *GatewayConnection) startWorkers() error {
 		receivedAck: true,
 		sequence:    new(int64),
 		onNoAck: func() {
+			if g.conn == nil {
+				return
+			}
 			g.log(LogError, "No heartbeat ack received since sending last heartbeast, reconnecting... ip: %s", g.conn.RemoteAddr().String())
 			err := g.ReconnectUnlessClosed(false)
 			if err != nil {
