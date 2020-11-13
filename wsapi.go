@@ -174,6 +174,10 @@ func (wh *wsHeartBeater) Run(interval time.Duration) {
 }
 
 func (wh *wsHeartBeater) SendBeat() {
+	wh.Lock()
+	wh.lastSend = time.Now()
+	wh.Unlock()
+	
 	seq := atomic.LoadInt64(wh.sequence)
 
 	wh.writer.Queue(&outgoingEvent{
