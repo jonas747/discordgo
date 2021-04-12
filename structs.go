@@ -247,6 +247,14 @@ type ChannelEdit struct {
 	RateLimitPerUser     *int                   `json:"rate_limit_per_user,omitempty"`
 }
 
+type RoleCreate struct {
+	Name        string `json:"name,omitempty"`
+	Permissions string `json:"permissions,omitempty"`
+	Color       int32  `json:"color,omitempty"`
+	Hoist       bool   `json:"hoist"`
+	Mentionable bool   `json:"mentionable"`
+}
+
 // A PermissionOverwrite holds permission overwrite data for a Channel
 type PermissionOverwrite struct {
 	ID    int64  `json:"id,string"`
