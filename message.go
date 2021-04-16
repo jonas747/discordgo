@@ -11,6 +11,7 @@ package discordgo
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -99,6 +100,10 @@ func (m *Message) GetGuildID() int64 {
 
 func (m *Message) GetChannelID() int64 {
 	return m.ChannelID
+}
+
+func (m *Message) Link() string {
+	return fmt.Sprintf("https://discord.com/channels/%v/%v/%v", m.GuildID, m.ChannelID, m.ID)
 }
 
 // File stores info about files you e.g. send in messages.
