@@ -15,7 +15,7 @@ package discordgo
 
 // An Application struct stores values for a Discord OAuth2 Application
 type Application struct {
-	ID                  int64     `json:"id,omitempty"`
+	ID                  int64     `json:"id,string,omitempty"`
 	Name                string    `json:"name"`
 	Description         string    `json:"description,omitempty"`
 	Icon                string    `json:"icon,omitempty"`
@@ -34,6 +34,18 @@ type Application struct {
 func (s *Session) Application(appID int64) (st *Application, err error) {
 
 	body, err := s.RequestWithBucketID("GET", EndpointApplication(appID), nil, EndpointApplication(0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+	return
+}
+
+// Application returns an Application structure of the current bot
+func (s *Session) ApplicationMe() (st *Application, err error) {
+
+	body, err := s.RequestWithBucketID("GET", EndpointApplicationMe, nil, EndpointApplicationMe)
 	if err != nil {
 		return
 	}

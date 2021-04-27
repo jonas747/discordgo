@@ -244,11 +244,7 @@ func (s *Session) doRequestLockedBucket(method, urlStr, contentType string, b []
 
 func unmarshal(data []byte, v interface{}) error {
 	err := json.Unmarshal(data, v)
-	if err != nil {
-		return ErrJSONUnmarshal
-	}
-
-	return nil
+	return err
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -2367,5 +2363,287 @@ func (s *Session) RelationshipsMutualGet(userID int64) (mf []*User, err error) {
 	}
 
 	err = unmarshal(body, &mf)
+	return
+}
+
+// GetGlobalApplicationCommands fetches all of the global commands for your application. Returns an array of ApplicationCommand objects.
+// GET /applications/{application.id}/commands
+func (s *Session) GetGlobalApplicationCommands(applicationID int64) (st []*ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointApplicationCommands(applicationID), nil, EndpointApplicationCommands(0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// CreateGlobalApplicationCommand creates a new global command. New global commands will be available in all guilds after 1 hour.
+// POST /applications/{application.id}/commands
+func (s *Session) CreateGlobalApplicationCommand(applicationID int64, command *CreateApplicationCommandRequest) (st *ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("POST", EndpointApplicationCommands(applicationID), command, EndpointApplicationCommands(0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// BulkOverwriteGlobalApplicationCommands Takes a list of application commands, overwriting existing commands that are registered globally for this application. Updates will be available in all guilds after 1 hour.
+// PUT /applications/{application.id}/commands
+func (s *Session) BulkOverwriteGlobalApplicationCommands(applicationID int64, data []*CreateApplicationCommandRequest) (st []*ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("PUT", EndpointApplicationCommands(applicationID), data, EndpointApplicationCommands(0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// GetGlobalApplicationCommand fetches a global command for your application. Returns an ApplicationCommand object.
+// GET /applications/{application.id}/commands/{command.id}
+func (s *Session) GetGlobalApplicationCommand(applicationID int64, cmdID int64) (st *ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointApplicationCommand(applicationID, cmdID), nil, EndpointApplicationCommand(0, 0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+type EditApplicationCommandRequest struct {
+	Name              *string                      `json:"name,omitempty"`               //	1-32 character name matching ^[\w-]{1,32}$
+	Description       *string                      `json:"description,omitempty"`        //	1-100 character description
+	Options           *[]*ApplicationCommandOption `json:"options,omitempty"`            // the parameters for the command
+	DefaultPermission *bool                        `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
+}
+
+// EditGlobalApplicationCommand edits a global command. Updates will be available in all guilds after 1 hour.
+// PATCH /applications/{application.id}/commands/{command.id}
+func (s *Session) EditGlobalApplicationCommand(applicationID int64, cmdID int64, data *EditApplicationCommandRequest) (st *ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("PATCH", EndpointApplicationCommand(applicationID, cmdID), data, EndpointApplicationCommand(0, 0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// DeleteGlobalApplicationCommand deletes a global command.
+// DELETE /applications/{application.id}/commands/{command.id}
+func (s *Session) DeleteGlobalApplicationCommand(applicationID int64, cmdID int64) (err error) {
+	_, err = s.RequestWithBucketID("DELETE", EndpointApplicationCommand(applicationID, cmdID), nil, EndpointApplicationCommand(0, 0))
+	return
+}
+
+// GetGuildApplicationCommands fetches all of the guild commands for your application for a specific guild.
+// GET /applications/{application.id}/guilds/{guild.id}/commands
+func (s *Session) GetGuildApplicationCommands(applicationID int64, guildID int64) (st []*ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointApplicationGuildCommands(applicationID, guildID), nil, EndpointApplicationGuildCommands(0, guildID))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// CreateGuildApplicationCommands Create a new guild command. New guild commands will be available in the guild immediately. Returns 201 and an ApplicationCommand object. If the command did not already exist, it will count toward daily application command create limits.
+// POST /applications/{application.id}/guilds/{guild.id}/commands
+func (s *Session) CreateGuildApplicationCommands(applicationID int64, guildID int64, data *CreateApplicationCommandRequest) (st *ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("POST", EndpointApplicationGuildCommands(applicationID, guildID), data, EndpointApplicationGuildCommands(0, guildID))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// GetGuildApplicationCommand Fetch a guild command for your application.
+// GET /applications/{application.id}/guilds/{guild.id}/commands/{command.id}
+func (s *Session) GetGuildApplicationCommand(applicationID int64, guildID int64, cmdID int64) (st *ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointApplicationGuildCommand(applicationID, guildID, cmdID), nil, EndpointApplicationGuildCommand(0, guildID, 0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// EditGuildApplicationCommand Edit a guild command. Updates for guild commands will be available immediately.
+// PATCH /applications/{application.id}/guilds/{guild.id}/commands/{command.id}
+func (s *Session) EditGuildApplicationCommand(applicationID int64, guildID int64, cmdID int64, data *EditApplicationCommandRequest) (st *ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("PATCH", EndpointApplicationGuildCommand(applicationID, guildID, cmdID), data, EndpointApplicationGuildCommand(0, guildID, 0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// DeleteGuildApplicationCommand Delete a guild command.
+// DELETE /applications/{application.id}/guilds/{guild.id}/commands/{command.id}
+func (s *Session) DeleteGuildApplicationCommand(applicationID int64, guildID int64, cmdID int64) (err error) {
+	_, err = s.RequestWithBucketID("DELETE", EndpointApplicationGuildCommand(applicationID, guildID, cmdID), nil, EndpointApplicationGuildCommand(0, guildID, 0))
+	return
+}
+
+// BulkOverwriteGuildApplicationCommands Takes a list of application commands, overwriting existing commands for the guild.
+// PUT /applications/{application.id}/guilds/{guild.id}/commands
+func (s *Session) BulkOverwriteGuildApplicationCommands(applicationID int64, guildID int64, data []*ApplicationCommand) (st []*ApplicationCommand, err error) {
+	body, err := s.RequestWithBucketID("PUT", EndpointApplicationGuildCommands(applicationID, guildID), data, EndpointApplicationGuildCommands(0, guildID))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// GetGuildApplicationCommandPermissions Fetches command permissions for all commands for your application in a guild.
+// GET /applications/{application.id}/guilds/{guild.id}/commands/permissions
+func (s *Session) GetGuildApplicationCommandsPermissions(applicationID int64, guildID int64) (st []*GuildApplicationCommandPermissions, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointApplicationGuildCommandsPermissions(applicationID, guildID), nil, EndpointApplicationGuildCommandsPermissions(0, guildID))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// GetGuildApplicationCommandPermissions Fetches command permissions for a specific command for your application in a guild.
+// GET /applications/{application.id}/guilds/{guild.id}/commands/{command.id}/permissions
+func (s *Session) GetGuildApplicationCommandPermissions(applicationID int64, guildID int64, cmdID int64) (st *GuildApplicationCommandPermissions, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointApplicationGuildCommandPermissions(applicationID, guildID, cmdID), nil, EndpointApplicationGuildCommandPermissions(0, guildID, 0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// EditGuildApplicationCommandPermissions Edits command permissions for a specific command for your application in a guild.
+// PUT /applications/{application.id}/guilds/{guild.id}/commands/{command.id}/permissions
+// TODO: what does this return? docs dosn't say
+func (s *Session) EditGuildApplicationCommandPermissions(applicationID int64, guildID int64, cmdID int64, permissions []*ApplicationCommandPermissions) (err error) {
+	data := struct {
+		Permissions []*ApplicationCommandPermissions `json:"permissions"`
+	}{
+		permissions,
+	}
+
+	_, err = s.RequestWithBucketID("PUT", EndpointApplicationGuildCommandPermissions(applicationID, guildID, cmdID), data, EndpointApplicationGuildCommandPermissions(0, guildID, 0))
+	return
+}
+
+// BatchEditGuildApplicationCommandsPermissions Fetches command permissions for a specific command for your application in a guild.
+// PUT /applications/{application.id}/guilds/{guild.id}/commands/permissions
+func (s *Session) BatchEditGuildApplicationCommandsPermissions(applicationID int64, guildID int64, data []*GuildApplicationCommandPermissions) (st []*GuildApplicationCommandPermissions, err error) {
+
+	body, err := s.RequestWithBucketID("PUT", EndpointApplicationGuildCommandsPermissions(applicationID, guildID), data, EndpointApplicationGuildCommandsPermissions(0, guildID))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+
+	return
+}
+
+// CreateInteractionResponse Create a response to an Interaction from the gateway. Takes an Interaction response.
+// POST /interactions/{interaction.id}/{interaction.token}/callback
+func (s *Session) CreateInteractionResponse(interactionID int64, token string, data *InteractionResponse) (err error) {
+	_, err = s.RequestWithBucketID("POST", EndpointInteractionCallback(interactionID, token), data, EndpointInteractionCallback(0, ""))
+	return
+}
+
+// GetOriginalInteractionResponse Returns the initial Interaction response. Functions the same as Get Webhook Message.
+// GET /webhooks/{application.id}/{interaction.token}/messages/@original
+func (s *Session) GetOriginalInteractionResponse(applicationID int64, token string) (st *Message, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointInteractionOriginalMessage(applicationID, token), nil, EndpointInteractionOriginalMessage(0, ""))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+	return
+}
+
+type EditWebhookMessageRequest struct {
+	Content         *string          `json:"content,omitempty"`          //	the message contents (up to 2000 characters)
+	Embeds          *[]*MessageEmbed `json:"embeds,omitempty"`           // of up to 10 embed objects	embedded rich content
+	AllowedMentions *AllowedMentions `json:"allowed_mentions,omitempty"` // object	allowed mentions for the message
+	// File	file  `json:"file"` //	the contents of the file being sent/edited
+	// PayloadJson	string  `json:"payload_json"` //	See message create
+}
+
+// Edits the initial Interaction response. Functions the same as Edit Webhook Message.
+// PATCH /webhooks/{application.id}/{interaction.token}/messages/@original
+func (s *Session) EditOriginalInteractionResponse(applicationID int64, token string, data *EditWebhookMessageRequest) (st *Message, err error) {
+	body, err := s.RequestWithBucketID("PATCH", EndpointInteractionOriginalMessage(applicationID, token), data, EndpointInteractionOriginalMessage(0, ""))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+	return
+}
+
+// DeleteInteractionResponse Deletes the initial Interaction response.
+// DELETE /webhooks/{application.id}/{interaction.token}/messages/@original
+func (s *Session) DeleteInteractionResponse(applicationID int64, token string) (err error) {
+	_, err = s.RequestWithBucketID("DELETE", EndpointInteractionOriginalMessage(applicationID, token), nil, EndpointInteractionOriginalMessage(0, ""))
+	return
+}
+
+// CreateFollowupMessage Creates a followup message for an Interaction. Functions the same as Execute Webhook, but wait is always true, and flags can be set to 64 in the body to send an ephemeral message.
+// POST /webhooks/{application.id}/{interaction.token}
+func (s *Session) CreateFollowupMessage(applicationID int64, token string, data *WebhookParams) (st *Message, err error) {
+	body, err := s.RequestWithBucketID("POST", EndpointWebhookToken(applicationID, token), data, EndpointWebhookToken(0, ""))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+	return
+}
+
+// EditFollowupMessage Edits a followup message for an Interaction. Functions the same as Edit Webhook Message.
+// PATCH /webhooks/{application.id}/{interaction.token}/messages/{message.id}
+func (s *Session) EditFollowupMessage(applicationID int64, token string, messageID int64, data *EditWebhookMessageRequest) (st *Message, err error) {
+	body, err := s.RequestWithBucketID("PATCH", EndpointInteractionFollowupMessage(applicationID, token, messageID), data, EndpointInteractionFollowupMessage(0, "", 0))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+	return
+}
+
+// DeleteFollowupMessage Deletes a followup message for an Interaction.
+// DELETE /webhooks/{application.id}/{interaction.token}/messages/{message.id}
+func (s *Session) DeleteFollowupMessage(applicationID int64, token string, messageID int64) (err error) {
+	_, err = s.RequestWithBucketID("DELETE", EndpointInteractionFollowupMessage(applicationID, token, messageID), nil, EndpointInteractionFollowupMessage(0, "", 0))
 	return
 }

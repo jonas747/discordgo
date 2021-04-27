@@ -148,5 +148,42 @@ var (
 	EndpointOauth2          = EndpointAPI + "oauth2/"
 	EndpointApplications    = EndpointOauth2 + "applications"
 	EndpointApplication     = func(aID int64) string { return EndpointApplications + "/" + StrID(aID) }
+	EndpointApplicationMe   = EndpointApplications + "/@me"
 	EndpointApplicationsBot = func(aID int64) string { return EndpointApplications + "/" + StrID(aID) + "/bot" }
+
+	EndpointApplicationNonOauth2 = func(aID int64) string { return EndpointAPI + "applications/" + StrID(aID) }
+	EndpointApplicationCommands  = func(aID int64) string { return EndpointApplicationNonOauth2(aID) + "/commands" }
+	EndpointApplicationCommand   = func(aID int64, cmdID int64) string {
+		return EndpointApplicationNonOauth2(aID) + "/commands/" + StrID(cmdID)
+	}
+
+	EndpointApplicationGuildCommands = func(aID int64, gID int64) string {
+		return EndpointApplicationNonOauth2(aID) + "/guilds/" + StrID(gID) + "/commands"
+	}
+
+	EndpointApplicationGuildCommand = func(aID int64, gID int64, cmdID int64) string {
+		return EndpointApplicationGuildCommands(aID, gID) + "/" + StrID(cmdID)
+	}
+
+	EndpointApplicationGuildCommandsPermissions = func(aID int64, gID int64) string {
+		return EndpointApplicationGuildCommands(aID, gID) + "/permissions"
+	}
+
+	EndpointApplicationGuildCommandPermissions = func(aID int64, gID int64, cmdID int64) string {
+		return EndpointApplicationGuildCommand(aID, gID, cmdID) + "/permissions"
+	}
+
+	EndpointInteractions        = EndpointAPI + "interactions"
+	EndpointInteractionCallback = func(interactionID int64, token string) string {
+		return EndpointInteractions + "/" + StrID(interactionID) + "/" + token + "/callback"
+	}
+	EndpointWebhookInteraction = func(applicationID int64, token string) string {
+		return EndpointWebhooks + "/" + StrID(applicationID) + "/" + token
+	}
+	EndpointInteractionOriginalMessage = func(applicationID int64, token string) string {
+		return EndpointWebhookInteraction(applicationID, token) + "/messages/@original"
+	}
+	EndpointInteractionFollowupMessage = func(applicationID int64, token string, messageID int64) string {
+		return EndpointWebhookInteraction(applicationID, token) + "/messages/" + StrID(messageID)
+	}
 )
