@@ -1145,7 +1145,7 @@ type InviteUser struct {
 
 // An ApplicationCommand is the base "command" model that belongs to an application. This is what you are creating when you POST a new command.
 type ApplicationCommand struct {
-	ID                int64                       `json:"id.string"`                    // unique id of the command
+	ID                int64                       `json:"id,string"`                    // unique id of the command
 	ApplicationID     int64                       `json:"application_id,string"`        // unique id of the parent application
 	Name              string                      `json:"name"`                         // 1-32 character name matching ^[\w-]{1,32}$
 	Description       string                      `json:"description"`                  // 1-100 character description
