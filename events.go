@@ -150,6 +150,10 @@ type GuildMemberAdd struct {
 	*Member
 }
 
+func (e *GuildMemberAdd) GetGuildID() int64 {
+	return e.GuildID
+}
+
 // GuildMemberUpdate is the data for a GuildMemberUpdate event.
 type GuildMemberUpdate struct {
 	*Member
@@ -427,5 +431,5 @@ type InviteDelete struct {
 }
 
 type InteractionCreate struct {
-	*Interaction
+	Interaction
 }

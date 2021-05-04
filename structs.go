@@ -1212,16 +1212,61 @@ const (
 
 // Interaction is the base "thing" that is sent when a user invokes a command, and is the same for Slash Commands and other future interaction types.
 type Interaction struct {
-	ID            int64                              `json:"id,string"`             // id of the interaction
-	ApplicationID int64                              `json:"application_id,string"` // id of the application this interaction is for
-	Kind          InteractionType                    `json:"type"`                  // the type of interaction
-	Data          *ApplicationCommandInteractionData `json:"data"`                  // the command data payload
-	GuildID       int64                              `json:"guild_id,string"`       // the guild it was sent from
-	ChannelID     int64                              `json:"channel_id,string"`     // the channel it was sent from
-	Member        *Member                            `json:"member"`                // member object	guild member data for the invoking user, including permissions
-	User          *User                              `json:"user"`                  // object	user object for the invoking user, if invoked in a DM
-	Token         string                             `json:"token"`                 // a continuation token for responding to the interaction
-	Version       int                                `json:"version"`               // read-only property, always
+	ID            int64           `json:"id,string"`             // id of the interaction
+	ApplicationID int64           `json:"application_id,string"` // id of the application this interaction is for
+	Kind          InteractionType `json:"type"`                  // the type of interaction
+	GuildID       int64           `json:"guild_id,string"`       // the guild it was sent from
+	ChannelID     int64           `json:"channel_id,string"`     // the channel it was sent from
+	Member        *Member         `json:"member"`                // member object	guild member data for the invoking user, including permissions
+	User          *User           `json:"user"`                  // object	user object for the invoking user, if invoked in a DM
+	Token         string          `json:"token"`                 // a continuation token for responding to the interaction
+	Version       int             `json:"version"`               // read-only property, always
+
+	DataCommand *ApplicationCommandInteractionData
+}
+
+type interactionTemp struct {
+	ID            int64           `json:"id,string"`             // id of the interaction
+	ApplicationID int64           `json:"application_id,string"` // id of the application this interaction is for
+	Kind          InteractionType `json:"type"`                  // the type of interaction
+	Data          json.RawMessage `json:"data"`                  // data payload
+	GuildID       int64           `json:"guild_id,string"`       // the guild it was sent from
+	ChannelID     int64           `json:"channel_id,string"`     // the channel it was sent from
+	Member        *Member         `json:"member"`                // member object	guild member data for the invoking user, including permissions
+	User          *User           `json:"user"`                  // object	user object for the invoking user, if invoked in a DM
+	Token         string          `json:"token"`                 // a continuation token for responding to the interaction
+	Version       int             `json:"version"`               // read-only property, always
+}
+
+// Interaction requires custom unmarshal logic because of the Data field being dependant on the interaction type
+func (a *Interaction) UnmarshalJSON(b []byte) error {
+	var temp *interactionTemp
+	err := json.Unmarshal(b, &temp)
+	if err != nil {
+		return err
+	}
+
+	*a = Interaction{
+		ID:            temp.ID,
+		ApplicationID: temp.ApplicationID,
+		Kind:          temp.Kind,
+		GuildID:       temp.GuildID,
+		ChannelID:     temp.ChannelID,
+		Member:        temp.Member,
+		User:          temp.User,
+		Token:         temp.Token,
+		Version:       temp.Version,
+	}
+
+	switch temp.Kind {
+	case InteractionTypeApplicationCommand:
+		err = json.Unmarshal(temp.Data, &a.DataCommand)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type InteractionType int

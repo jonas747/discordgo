@@ -2590,17 +2590,9 @@ func (s *Session) GetOriginalInteractionResponse(applicationID int64, token stri
 	return
 }
 
-type EditWebhookMessageRequest struct {
-	Content         *string          `json:"content,omitempty"`          //	the message contents (up to 2000 characters)
-	Embeds          *[]*MessageEmbed `json:"embeds,omitempty"`           // of up to 10 embed objects	embedded rich content
-	AllowedMentions *AllowedMentions `json:"allowed_mentions,omitempty"` // object	allowed mentions for the message
-	// File	file  `json:"file"` //	the contents of the file being sent/edited
-	// PayloadJson	string  `json:"payload_json"` //	See message create
-}
-
 // Edits the initial Interaction response. Functions the same as Edit Webhook Message.
 // PATCH /webhooks/{application.id}/{interaction.token}/messages/@original
-func (s *Session) EditOriginalInteractionResponse(applicationID int64, token string, data *EditWebhookMessageRequest) (st *Message, err error) {
+func (s *Session) EditOriginalInteractionResponse(applicationID int64, token string, data *WebhookParams) (st *Message, err error) {
 	body, err := s.RequestWithBucketID("PATCH", EndpointInteractionOriginalMessage(applicationID, token), data, EndpointInteractionOriginalMessage(0, ""))
 	if err != nil {
 		return
@@ -2631,7 +2623,7 @@ func (s *Session) CreateFollowupMessage(applicationID int64, token string, data 
 
 // EditFollowupMessage Edits a followup message for an Interaction. Functions the same as Edit Webhook Message.
 // PATCH /webhooks/{application.id}/{interaction.token}/messages/{message.id}
-func (s *Session) EditFollowupMessage(applicationID int64, token string, messageID int64, data *EditWebhookMessageRequest) (st *Message, err error) {
+func (s *Session) EditFollowupMessage(applicationID int64, token string, messageID int64, data *WebhookParams) (st *Message, err error) {
 	body, err := s.RequestWithBucketID("PATCH", EndpointInteractionFollowupMessage(applicationID, token, messageID), data, EndpointInteractionFollowupMessage(0, "", 0))
 	if err != nil {
 		return
