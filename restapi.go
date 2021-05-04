@@ -2506,7 +2506,7 @@ func (s *Session) DeleteGuildApplicationCommand(applicationID int64, guildID int
 
 // BulkOverwriteGuildApplicationCommands Takes a list of application commands, overwriting existing commands for the guild.
 // PUT /applications/{application.id}/guilds/{guild.id}/commands
-func (s *Session) BulkOverwriteGuildApplicationCommands(applicationID int64, guildID int64, data []*ApplicationCommand) (st []*ApplicationCommand, err error) {
+func (s *Session) BulkOverwriteGuildApplicationCommands(applicationID int64, guildID int64, data []*CreateApplicationCommandRequest) (st []*ApplicationCommand, err error) {
 	body, err := s.RequestWithBucketID("PUT", EndpointApplicationGuildCommands(applicationID, guildID), data, EndpointApplicationGuildCommands(0, guildID))
 	if err != nil {
 		return
