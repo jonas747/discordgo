@@ -971,7 +971,7 @@ type WebhookParams struct {
 	Username        string           `json:"username,omitempty"`
 	AvatarURL       string           `json:"avatar_url,omitempty"`
 	TTS             bool             `json:"tts,omitempty"`
-	File            string           `json:"file,omitempty"`
+	File            *File            `json:"-,omitempty"`
 	Embeds          []*MessageEmbed  `json:"embeds,omitempty"`
 	Flags           int64            `json:"flags,omitempty"`
 	AllowedMentions *AllowedMentions `json:"allowed_mentions,omitempty"`

@@ -2194,6 +2194,93 @@ func (s *Session) WebhookExecute(webhookID int64, token string, wait bool, data 
 	return
 }
 
+// WebhookExecuteComplex executes a webhook.
+// webhookID: The ID of a webhook.
+// token    : The auth token for the webhook
+func (s *Session) WebhookExecuteComplex(webhookID int64, token string, wait bool, data *WebhookParams) (m *Message, err error) {
+	uri := EndpointWebhookToken(webhookID, token)
+
+	if wait {
+		uri += "?wait=true"
+	}
+
+	endpoint := uri
+
+	// TODO: Remove this when compatibility is not required.
+	var files []*File
+	if data.File != nil {
+		files = []*File{data.File}
+	}
+
+	var response []byte
+	if len(files) > 0 {
+		body := &bytes.Buffer{}
+		bodywriter := multipart.NewWriter(body)
+
+		var payload []byte
+		payload, err = json.Marshal(data)
+		if err != nil {
+			return
+		}
+
+		var p io.Writer
+
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition", `form-data; name="payload_json"`)
+		h.Set("Content-Type", "application/json")
+
+		p, err = bodywriter.CreatePart(h)
+		if err != nil {
+			return
+		}
+
+		if _, err = p.Write(payload); err != nil {
+			return
+		}
+
+		for i, file := range files {
+			h := make(textproto.MIMEHeader)
+			h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file%d"; filename="%s"`, i, quoteEscaper.Replace(file.Name)))
+			contentType := file.ContentType
+			if contentType == "" {
+				contentType = "application/octet-stream"
+			}
+			h.Set("Content-Type", contentType)
+
+			p, err = bodywriter.CreatePart(h)
+			if err != nil {
+				return
+			}
+
+			if _, err = io.Copy(p, file.Reader); err != nil {
+				return
+			}
+		}
+
+		err = bodywriter.Close()
+		if err != nil {
+			return
+		}
+
+		response, err = s.request("POST", endpoint, bodywriter.FormDataContentType(), body.Bytes(), EndpointWebhookToken(0, ""))
+	} else {
+		response, err = s.RequestWithBucketID("POST", endpoint, data, EndpointWebhookToken(0, ""))
+	}
+
+	if err != nil {
+		return
+	}
+
+	if wait {
+		err = unmarshal(response, &m)
+	}
+
+	return
+
+	// _, err = s.RequestWithBucketID("POST", uri, data, EndpointWebhookToken(0, ""))
+	// return
+}
+
 // MessageReactionAdd creates an emoji reaction to a message.
 // channelID : The channel ID.
 // messageID : The message ID.
@@ -2612,13 +2699,16 @@ func (s *Session) DeleteInteractionResponse(applicationID int64, token string) (
 // CreateFollowupMessage Creates a followup message for an Interaction. Functions the same as Execute Webhook, but wait is always true, and flags can be set to 64 in the body to send an ephemeral message.
 // POST /webhooks/{application.id}/{interaction.token}
 func (s *Session) CreateFollowupMessage(applicationID int64, token string, data *WebhookParams) (st *Message, err error) {
-	body, err := s.RequestWithBucketID("POST", EndpointWebhookToken(applicationID, token), data, EndpointWebhookToken(0, ""))
-	if err != nil {
-		return
-	}
+	body, err := s.WebhookExecuteComplex(applicationID, token, true, data)
+	return body, err
 
-	err = unmarshal(body, &st)
-	return
+	// body, err := s.RequestWithBucketID("POST", EndpointWebhookToken(applicationID, token), data, EndpointWebhookToken(0, ""))
+	// if err != nil {
+	// 	return
+	// }
+
+	// err = unmarshal(body, &st)
+	// return
 }
 
 // EditFollowupMessage Edits a followup message for an Interaction. Functions the same as Edit Webhook Message.
