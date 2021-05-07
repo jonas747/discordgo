@@ -37,13 +37,13 @@ func NewRatelimiter() *RateLimiter {
 		numConcurrentLocks: new(int32),
 
 		// with higher precision ratelimit headers enabled, this is no longer needed
-		customRateLimits: []*customRateLimit{
-			&customRateLimit{
-				suffix:   "/reactions//",
-				requests: 1,
-				reset:    1 * time.Second,
-			},
-		},
+		// customRateLimits: []*customRateLimit{
+		// 	&customRateLimit{
+		// 		suffix:   "/reactions//",
+		// 		requests: 1,
+		// 		reset:    250 * time.Millisecond,
+		// 	},
+		// },
 	}
 }
 
