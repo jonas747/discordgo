@@ -2189,7 +2189,7 @@ func (s *Session) WebhookExecute(webhookID int64, token string, wait bool, data 
 		uri += "?wait=true"
 	}
 
-	_, err = s.RequestWithBucketID("POST", uri, data, EndpointWebhookToken(0, ""))
+	_, err = s.RequestWithBucketID("POST", uri, data, EndpointWebhookToken(webhookID, token))
 
 	return
 }
@@ -2262,9 +2262,9 @@ func (s *Session) WebhookExecuteComplex(webhookID int64, token string, wait bool
 			return
 		}
 
-		response, err = s.request("POST", endpoint, bodywriter.FormDataContentType(), body.Bytes(), EndpointWebhookToken(0, ""))
+		response, err = s.request("POST", endpoint, bodywriter.FormDataContentType(), body.Bytes(), EndpointWebhookToken(webhookID, token))
 	} else {
-		response, err = s.RequestWithBucketID("POST", endpoint, data, EndpointWebhookToken(0, ""))
+		response, err = s.RequestWithBucketID("POST", endpoint, data, EndpointWebhookToken(webhookID, token))
 	}
 
 	if err != nil {
