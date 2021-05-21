@@ -70,7 +70,8 @@ func (s *Session) request(method, urlStr, contentType string, b []byte, bucketID
 	if bucketID == "" {
 		bucketID = strings.SplitN(urlStr, "?", 2)[0]
 	}
-	return s.RequestWithLockedBucket(method, urlStr, contentType, b, s.Ratelimiter.LockBucket(bucketID))
+
+	return s.RequestWithBucket(method, urlStr, contentType, b, s.Ratelimiter.GetBucket(bucketID))
 }
 
 type ReaderWithMockClose struct {
@@ -82,17 +83,12 @@ func (rwmc *ReaderWithMockClose) Close() error {
 }
 
 // RequestWithLockedBucket makes a request using a bucket that's already been locked
-func (s *Session) RequestWithLockedBucket(method, urlStr, contentType string, b []byte, bucket *Bucket) (response []byte, err error) {
+func (s *Session) RequestWithBucket(method, urlStr, contentType string, b []byte, bucket *Bucket) (response []byte, err error) {
 
 	for i := 0; i < s.MaxRestRetries; i++ {
-		if i != 0 {
-			// bucket is unlocked during retry downtimes, lock it here again
-			s.Ratelimiter.LockBucketObject(bucket)
-		}
-
 		var retry bool
 		var ratelimited bool
-		response, retry, ratelimited, err = s.doRequestLockedBucket(method, urlStr, contentType, b, bucket)
+		response, retry, ratelimited, err = s.doRequest(method, urlStr, contentType, b, bucket)
 		if !retry {
 			break
 		}
@@ -114,58 +110,14 @@ const (
 	CtxKeyRatelimitBucket CtxKey = iota
 )
 
-// RequestWithLockedBucket makes a request using a bucket that's already been locked
-func (s *Session) doRequestLockedBucket(method, urlStr, contentType string, b []byte, bucket *Bucket) (response []byte, retry bool, ratelimitRetry bool, err error) {
-	if s.Debug {
-		log.Printf("API REQUEST %8s :: %s\n", method, urlStr)
-		log.Printf("API REQUEST  PAYLOAD :: [%s]\n", string(b))
-	}
+// doRequest makes a request using a bucket
+func (s *Session) doRequest(method, urlStr, contentType string, b []byte, bucket *Bucket) (response []byte, retry bool, ratelimitRetry bool, err error) {
 
 	if atomic.LoadInt32(s.tokenInvalid) != 0 {
 		return nil, false, false, ErrTokenInvalid
 	}
 
-	req, err := http.NewRequest(method, urlStr, bytes.NewReader(b))
-	if err != nil {
-		bucket.Release(nil)
-		return
-	}
-
-	req.GetBody = func() (io.ReadCloser, error) {
-		return &ReaderWithMockClose{bytes.NewReader(b)}, nil
-	}
-
-	// Not used on initial login..
-	// TODO: Verify if a login, otherwise complain about no-token
-	if s.Token != "" {
-		req.Header.Set("authorization", s.Token)
-	}
-
-	// Discord's API returns a 400 Bad Request is Content-Type is set, but the
-	// request body is empty.
-	if b != nil {
-		req.Header.Set("Content-Type", contentType)
-	}
-
-	// TODO: Make a configurable static variable.
-	req.Header.Set("User-Agent", fmt.Sprintf("DiscordBot (https://github.com/jonas747/discordgo, v%s)", VERSION))
-	req.Header.Set("X-RateLimit-Precision", "millisecond")
-
-	// for things such as stats collecting in the roundtripper for example
-	ctx := context.WithValue(req.Context(), CtxKeyRatelimitBucket, bucket)
-	req = req.WithContext(ctx)
-
-	if s.Debug {
-		for k, v := range req.Header {
-			log.Printf("API REQUEST   HEADER :: [%s] = %+v\n", k, v)
-		}
-	}
-
-	resp, err := s.Client.Do(req)
-	if err != nil {
-		bucket.Release(nil)
-		return nil, true, false, err
-	}
+	req, resp, err := s.innerDoRequest(method, urlStr, contentType, b, bucket)
 
 	defer func() {
 		err2 := resp.Body.Close()
@@ -173,11 +125,6 @@ func (s *Session) doRequestLockedBucket(method, urlStr, contentType string, b []
 			log.Println("error closing resp body")
 		}
 	}()
-
-	err = bucket.Release(resp.Header)
-	if err != nil {
-		return
-	}
 
 	response, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -240,6 +187,63 @@ func (s *Session) doRequestLockedBucket(method, urlStr, contentType string, b []
 	}
 
 	return
+}
+
+func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, bucket *Bucket) (*http.Request, *http.Response, error) {
+	bucketLockID := s.Ratelimiter.LockBucketObject(bucket)
+	defer func() {
+		err := bucket.Release(nil, bucketLockID)
+		if err != nil {
+			s.log(LogError, "failed unlocking ratelimit bucket: %v", err)
+		}
+	}()
+
+	if s.Debug {
+		log.Printf("API REQUEST %8s :: %s\n", method, urlStr)
+		log.Printf("API REQUEST  PAYLOAD :: [%s]\n", string(b))
+	}
+
+	req, err := http.NewRequest(method, urlStr, bytes.NewReader(b))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req.GetBody = func() (io.ReadCloser, error) {
+		return &ReaderWithMockClose{bytes.NewReader(b)}, nil
+	}
+
+	// Not used on initial login..
+	// TODO: Verify if a login, otherwise complain about no-token
+	if s.Token != "" {
+		req.Header.Set("authorization", s.Token)
+	}
+
+	// Discord's API returns a 400 Bad Request is Content-Type is set, but the
+	// request body is empty.
+	if b != nil {
+		req.Header.Set("Content-Type", contentType)
+	}
+
+	// TODO: Make a configurable static variable.
+	req.Header.Set("User-Agent", fmt.Sprintf("DiscordBot (https://github.com/jonas747/discordgo, v%s)", VERSION))
+	req.Header.Set("X-RateLimit-Precision", "millisecond")
+
+	// for things such as stats collecting in the roundtripper for example
+	ctx := context.WithValue(req.Context(), CtxKeyRatelimitBucket, bucket)
+	req = req.WithContext(ctx)
+
+	if s.Debug {
+		for k, v := range req.Header {
+			log.Printf("API REQUEST   HEADER :: [%s] = %+v\n", k, v)
+		}
+	}
+
+	resp, err := s.Client.Do(req)
+	if err == nil {
+		err = bucket.Release(resp.Header, bucketLockID)
+	}
+
+	return req, resp, err
 }
 
 func unmarshal(data []byte, v interface{}) error {

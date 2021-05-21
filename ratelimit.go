@@ -21,7 +21,6 @@ type RateLimiter struct {
 	sync.Mutex
 	global           *int64
 	buckets          map[string]*Bucket
-	globalRateLimit  time.Duration
 	customRateLimits []*customRateLimit
 
 	MaxConcurrentRequests int
@@ -61,9 +60,10 @@ func (r *RateLimiter) GetBucket(key string) *Bucket {
 	}
 
 	b := &Bucket{
-		Remaining: 1,
-		Key:       key,
-		global:    r.global,
+		Remaining:   1,
+		Key:         key,
+		global:      r.global,
+		lockCounter: new(int64),
 	}
 
 	if r.MaxConcurrentRequests > 0 {
@@ -89,7 +89,7 @@ func (r *RateLimiter) GetWaitTime(b *Bucket, minRemaining int) time.Duration {
 
 	wait := time.Duration(0)
 	if b.Remaining < minRemaining && b.reset.After(time.Now()) {
-		wait = b.reset.Sub(time.Now())
+		wait = time.Until(b.reset)
 	}
 
 	// Check for global ratelimits
@@ -114,12 +114,14 @@ func (r *RateLimiter) GetWaitTime(b *Bucket, minRemaining int) time.Duration {
 }
 
 // LockBucket Locks until a request can be made
-func (r *RateLimiter) LockBucket(bucketID string) *Bucket {
-	return r.LockBucketObject(r.GetBucket(bucketID))
+func (r *RateLimiter) LockBucket(bucketID string) (b *Bucket, lockID int64) {
+	bucket := r.GetBucket(bucketID)
+	id := r.LockBucketObject(bucket)
+	return bucket, id
 }
 
 // LockBucketObject Locks an already resolved bucket until a request can be made
-func (r *RateLimiter) LockBucketObject(b *Bucket) *Bucket {
+func (r *RateLimiter) LockBucketObject(b *Bucket) (lockID int64) {
 	b.Lock()
 
 	if wait := r.GetWaitTime(b, 1); wait > 0 {
@@ -131,7 +133,7 @@ func (r *RateLimiter) LockBucketObject(b *Bucket) *Bucket {
 		// sleep until were below the maximum
 		for {
 			numNow := atomic.AddInt32(r.numConcurrentLocks, 1)
-			if int(numNow) >= r.MaxConcurrentRequests {
+			if int(numNow) > r.MaxConcurrentRequests {
 				atomic.AddInt32(r.numConcurrentLocks, -1)
 				didWaitForMaxCCR = true
 				time.Sleep(time.Millisecond * 25)
@@ -149,7 +151,9 @@ func (r *RateLimiter) LockBucketObject(b *Bucket) *Bucket {
 	}
 
 	b.Remaining--
-	return b
+
+	counter := atomic.AddInt64(b.lockCounter, 1)
+	return counter
 }
 
 func (r *RateLimiter) SetGlobalTriggered(to time.Time) {
@@ -161,7 +165,6 @@ type Bucket struct {
 	sync.Mutex
 	Key                string
 	Remaining          int
-	limit              int
 	reset              time.Time
 	global             *int64
 	numConcurrentLocks *int32
@@ -169,12 +172,22 @@ type Bucket struct {
 	lastReset       time.Time
 	customRateLimit *customRateLimit
 	Userdata        interface{}
+
+	lockCounter *int64
 }
 
 // Release unlocks the bucket and reads the headers to update the buckets ratelimit info
 // and locks up the whole thing in case if there's a global ratelimit.
-func (b *Bucket) Release(headers http.Header) error {
+func (b *Bucket) Release(headers http.Header, lockCounter int64) error {
+	if atomic.LoadInt64(b.lockCounter) != lockCounter {
+		// attempted double unlock
+		return nil
+	}
+
 	defer b.Unlock()
+
+	// make sure that we can no longer unlock with the same ID
+	atomic.AddInt64(b.lockCounter, 1)
 
 	if b.numConcurrentLocks != nil {
 		atomic.AddInt32(b.numConcurrentLocks, -1)
@@ -182,7 +195,7 @@ func (b *Bucket) Release(headers http.Header) error {
 
 	// Check if the bucket uses a custom ratelimiter
 	if rl := b.customRateLimit; rl != nil {
-		if time.Now().Sub(b.lastReset) >= rl.reset {
+		if time.Since(b.lastReset) >= rl.reset {
 			b.Remaining = rl.requests - 1
 			b.lastReset = time.Now()
 		}

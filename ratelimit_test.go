@@ -12,7 +12,7 @@ func TestRatelimitReset(t *testing.T) {
 	rl := NewRatelimiter()
 
 	sendReq := func(endpoint string) {
-		bucket := rl.LockBucket(endpoint)
+		bucket, id := rl.LockBucket(endpoint)
 
 		headers := http.Header(make(map[string][]string))
 
@@ -21,7 +21,7 @@ func TestRatelimitReset(t *testing.T) {
 		headers.Set("X-RateLimit-Reset-After", "2")
 		headers.Set("Date", time.Now().Format(time.RFC850))
 
-		err := bucket.Release(headers)
+		err := bucket.Release(headers, id)
 		if err != nil {
 			t.Errorf("Release returned error: %v", err)
 		}
@@ -50,7 +50,7 @@ func TestRatelimitGlobal(t *testing.T) {
 	rl := NewRatelimiter()
 
 	sendReq := func(endpoint string) {
-		bucket := rl.LockBucket(endpoint)
+		bucket, id := rl.LockBucket(endpoint)
 
 		headers := http.Header(make(map[string][]string))
 
@@ -58,7 +58,7 @@ func TestRatelimitGlobal(t *testing.T) {
 		// Reset for approx 1 seconds from now
 		headers.Set("Retry-After", "1000")
 
-		err := bucket.Release(headers)
+		err := bucket.Release(headers, id)
 		if err != nil {
 			t.Errorf("Release returned error: %v", err)
 		}
@@ -82,6 +82,7 @@ func TestRatelimitGlobal(t *testing.T) {
 
 func BenchmarkRatelimitSingleEndpoint(b *testing.B) {
 	rl := NewRatelimiter()
+	rl.MaxConcurrentRequests = 10
 	for i := 0; i < b.N; i++ {
 		sendBenchReq("/guilds/99/channels", rl)
 	}
@@ -89,18 +90,19 @@ func BenchmarkRatelimitSingleEndpoint(b *testing.B) {
 
 func BenchmarkRatelimitParallelMultiEndpoints(b *testing.B) {
 	rl := NewRatelimiter()
+	rl.MaxConcurrentRequests = 10
 	b.RunParallel(func(pb *testing.PB) {
 		i := 0
 		for pb.Next() {
 			sendBenchReq("/guilds/"+strconv.Itoa(i)+"/channels", rl)
-			i++
+			// i++
 		}
 	})
 }
 
 // Does not actually send requests, but locks the bucket and releases it with made-up headers
 func sendBenchReq(endpoint string, rl *RateLimiter) {
-	bucket := rl.LockBucket(endpoint)
+	bucket, id := rl.LockBucket(endpoint)
 
 	headers := http.Header(make(map[string][]string))
 
@@ -108,5 +110,7 @@ func sendBenchReq(endpoint string, rl *RateLimiter) {
 	headers.Set("X-RateLimit-Reset", strconv.FormatInt(time.Now().Unix(), 10))
 	headers.Set("Date", time.Now().Format(time.RFC850))
 
-	bucket.Release(headers)
+	time.Sleep(time.Millisecond * 100)
+
+	bucket.Release(headers, id)
 }
