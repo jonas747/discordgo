@@ -169,14 +169,14 @@ func (s *Session) doRequest(method, urlStr, contentType string, b []byte, bucket
 		// this method can cause longer delays than required
 		return nil, true, true, nil
 
-	case http.StatusUnauthorized:
-		if strings.Index(s.Token, "Bot ") != 0 {
-			s.log(LogInformational, ErrUnauthorized.Error())
-			err = ErrUnauthorized
-		} else {
-			atomic.StoreInt32(s.tokenInvalid, 1)
-			err = ErrTokenInvalid
-		}
+	// case http.StatusUnauthorized:
+	// 	if strings.Index(s.Token, "Bot ") != 0 {
+	// 		s.log(LogInformational, ErrUnauthorized.Error())
+	// 		err = ErrUnauthorized
+	// 	} else {
+	// 		atomic.StoreInt32(s.tokenInvalid, 1)
+	// 		err = ErrTokenInvalid
+	// 	}
 	default: // Error condition
 		if resp.StatusCode >= 500 || resp.StatusCode < 400 {
 			// non 400 response code
