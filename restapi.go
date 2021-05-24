@@ -93,6 +93,10 @@ func (s *Session) RequestWithBucket(method, urlStr, contentType string, b []byte
 			break
 		}
 
+		if err != nil {
+			s.log(LogError, "Request error, retrying: %v", err)
+		}
+
 		if ratelimited {
 			i = 0
 		} else {
@@ -118,6 +122,9 @@ func (s *Session) doRequest(method, urlStr, contentType string, b []byte, bucket
 	}
 
 	req, resp, err := s.innerDoRequest(method, urlStr, contentType, b, bucket)
+	if err != nil {
+		return nil, true, false, err
+	}
 
 	defer func() {
 		err2 := resp.Body.Close()
