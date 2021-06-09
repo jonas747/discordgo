@@ -680,6 +680,18 @@ func (s *Session) Guild(guildID int64) (st *Guild, err error) {
 	return
 }
 
+// Guild returns a Guild structure of a specific Guild.
+// guildID   : The ID of a Guild
+func (s *Session) GuildWithCounts(guildID int64) (st *Guild, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointGuild(guildID)+"?with_counts=true", nil, EndpointGuild(guildID))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+	return
+}
+
 // GuildCreate creates a new Guild
 // name      : A name for the Guild (2-100 characters)
 func (s *Session) GuildCreate(name string) (st *Guild, err error) {
