@@ -961,8 +961,8 @@ func (s *Session) GuildMemberEdit(guildID, userID int64, roles []string) (err er
 func (s *Session) GuildMemberMove(guildID, userID, channelID int64) (err error) {
 
 	data := struct {
-		ChannelID int64 `json:"channel_id,string"`
-	}{channelID}
+		ChannelID nullIntID `json:"channel_id"`
+	}{nullIntID(channelID)}
 
 	_, err = s.RequestWithBucketID("PATCH", EndpointGuildMember(guildID, userID), data, EndpointGuildMember(guildID, 0))
 	if err != nil {
